@@ -1,3 +1,5 @@
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 # R Cafe  August - prepapre your script without the data at hand 
 
 ## Intro 
@@ -25,6 +27,11 @@ There are a few researchers at the TU Delft Architecture and the Built Environme
 - Online participation: [Register online](bit.ly/3zR0qB2)
 
 
+# License 
+
+This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+
+[![License: CC BY 4.0](https://licensebuttons.net/l/by/4.0/80x15.png)](https://creativecommons.org/licenses/by/4.0/)
 
  
 
