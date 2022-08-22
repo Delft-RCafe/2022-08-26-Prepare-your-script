@@ -2,7 +2,7 @@
 title: "Tips to prepare code without data at hand"
 author: "Aleksandra & Clementine"
 date: "`r Sys.Date()`"
-output: ioslides_presentation
+output: revealjs::revealjs_presentation
 ---
 
 ```{r setup, include=FALSE}
@@ -27,27 +27,39 @@ source(here('scripts', 'tips.R'))
 ```
 
 
-## R Markdown
+# Preapre your project
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
-
-## Slide with Bullets
+# Use relative paths
 
 - Bullet 1
 - Bullet 2
 - Bullet 3
 
-## Slide with R Output
+# Read the documentation  
 
 ```{r cars, echo = TRUE}
 summary(cars)
 ```
 
-## Slide with Plot
+## ... and make use of it
+
+
+# Read the data and metadata
 
 ```{r pressure}
 plot(pressure)
 ```
 
+# Create functions 
+
+to apply on entire dataset or data parts
+
+# Make use of lapply/apply 
+
+# Prepare for data vises
+
+# When you get the data ...
+
+# Example : CBS data 
+
+# Discussion
