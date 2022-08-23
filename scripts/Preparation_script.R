@@ -93,6 +93,33 @@ hh_tab$TYPHH <- as.factor(sample(1:8,n_rows,rep=T))
 # p <- p_tab %>% mutate_at(vars(), paste0("as.", metadata_p$type))  /!\ does not work!!
 # ----> Aleks?
 
+
+# Recreating  the simulating data, so that they include missing values: 
+n_rows <- 10000
+p_tab <- data.frame(replicate(length(vars_p),sample(0:1,n_rows,rep=TRUE)))
+colnames(p_tab) <- vars_p
+p_tab$RINPERSOON <- sample(0:n_rows,n_rows,rep=F)
+p_tab$GBAGEBOORTEMAAND <- as.factor(sample(1:12,n_rows,rep=T))
+p_tab$GBAGESLACHT <- sample(c('0','1','-'),n_rows,rep=TRUE)
+p_tab$GBAAANTALOUDERSBUITENLAND <- sample(c('0','1',''),n_rows,rep=TRUE)
+p_tab$GBAGENERATIE      <- sample(c('0','1','-'),n_rows,rep=TRUE)
+
+
+#Function to replace the  giver variables to NAs
+char_to_na <- function(x, char){
+  out_x <- x
+  out_x[which(out_x %in% char)] = NA
+  return(out_x)
+}
+
+# Data table way
+p_dtab <- as.data.table(p_tab)
+metadata_pd <- as.data.table(metadata_p) 
+
+p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char)}, .SD, metadata_pd$na,  SIMPLIFY=F ), .SDcols = metadata_pd$vars_p ]
+
+
+
 ###### Function to join the 2 tables
 join_tabs <- function(p_tab, hh_tab){
    single_tab <- left_join(p_tab, hh_tab, by=c("RINPERSOON" = "RINPERSOON"))
