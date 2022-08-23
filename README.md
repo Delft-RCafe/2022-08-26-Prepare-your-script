@@ -1,6 +1,6 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-# R Cafe  August - prepapre your script without the data at hand 
+# R Cafe  August - prepare your script without the data at hand 
 
 ## Intro 
 In the edition of [R Cafe](https://www.tudelft.nl/en/library/research-data-management/r/training-events/training-for-researchers/tu-delft-r-cafe), we are exploring the ways of preparing yourself to work we a dataset that you don't have at hand.
@@ -25,6 +25,19 @@ There are a few researchers at the TU Delft Architecture and the Built Environme
 - Place: **Steve Jobs Room, TUD Library**
 - Mode: **Hybrid (in person and online)**
 - Online participation: [Register online](bit.ly/3zR0qB2)
+
+
+# Resources
+ 
+- [CBS documentation](https://www.cbs.nl/-/media/cbs-op-maat/microdatabestanden/documents/2022/17/inpatab.pdf)
+- [Data Carpentry for social sciences](https://datacarpentry.org/r-socialsci/) 
+- [Frictionless data package](https://github.com/frictionlessdata/frictionless-r)
+- Software carpentry: Programming with R 
+  - [Best practices](https://swcarpentry.github.io/r-novice-inflammation/06-best-practices-R/)
+  - [Analyse multiple datasets](https://swcarpentry.github.io/r-novice-inflammation/03-loops-R/index.html)
+  - [Create functions](https://swcarpentry.github.io/r-novice-inflammation/02-func-R/index.html)
+  - [Factors](https://swcarpentry.github.io/r-novice-inflammation/12-supp-factors/index.html)
+  
 
 
 # License 
