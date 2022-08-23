@@ -94,6 +94,8 @@ hh_tab$TYPHH <- as.factor(sample(1:8,n_rows,rep=T))
 # ----> Aleks?
 
 
+# Creating the sample dataset ---------------------------------------------
+
 # Recreating  the simulating data, so that they include missing values: 
 n_rows <- 10000
 p_tab <- data.frame(replicate(length(vars_p),sample(0:1,n_rows,rep=TRUE)))
@@ -104,6 +106,9 @@ p_tab$GBAGESLACHT <- sample(c('0','1','-'),n_rows,rep=TRUE)
 p_tab$GBAAANTALOUDERSBUITENLAND <- sample(c('0','1',''),n_rows,rep=TRUE)
 p_tab$GBAGENERATIE      <- sample(c('0','1','-'),n_rows,rep=TRUE)
 
+
+
+# Replacing NAs -----------------------------------------------------------
 
 #Function to replace the  giver variables to NAs
 char_to_na <- function(x, char){
@@ -116,8 +121,20 @@ char_to_na <- function(x, char){
 p_dtab <- as.data.table(p_tab)
 metadata_pd <- as.data.table(metadata_p) 
 
+# Method 1 
 p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char)}, .SD, metadata_pd$na,  SIMPLIFY=F ), .SDcols = metadata_pd$vars_p ]
 
+# Method 2
+p_tab <- map2_dfr(p_tab,metadata_pd$na, char_to_na )
+
+
+
+# Adapting the data type  -------------------------------------------------
+
+funs <- paste0("as.", metadata_p$type)
+
+p_tab <- as.data.frame(mapply(function(a,b) b(a), p_tab, lapply(funs, get), SIMPLIFY = F))
+str(p_tab)
 
 
 ###### Function to join the 2 tables
