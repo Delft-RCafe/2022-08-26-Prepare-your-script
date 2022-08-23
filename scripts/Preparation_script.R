@@ -1,0 +1,141 @@
+#### Prep for RCafe, 26th August 2022
+### Clem + Aleks
+
+library(tidyverse)
+require('XML')
+
+# microdata catalog: https://www.cbs.nl/nl-nl/onze-diensten/maatwerk-en-microdata/microdata-zelf-onderzoek-doen/catalogus-microdata/bevolking
+
+
+download.file(
+  "https://www.cbs.nl/-/media/cbs-op-maat/microdatabestanden/documents/2022/13/gbapersoontab.pdf",
+  "GBAPERSOONTAB_doc.pdf"
+)
+
+# Open the pdf to get info
+
+vars_p <- c("RINPERSOONS", "RINPERSOON", "GBAGEBOORTELAND",
+               "GBAGESLACHT", "GBAGEBOORTELANDMOEDER", "GBAGEBOORTELANDVADER",
+               "GBAAANTALOUDERSBUITENLAND", "GBAHERKOMSTGROEPERING", "GBAGENERATIE",
+               "GBAGEBOORTEJAAR", "GBAGEBOORTEMAAND", "GBAGEBOORTEDAG",
+               "GBAGESLACHTMOEDER", "GBAGESLACHTVADER",
+               "GBAGEBOORTEJAARMOEDER", "GBAGEBOORTEMAANDMOEDER", "GBAGEBOORTEDAGMOEDER", 
+               "GBAGEBOORTEJAARVADER", "GBAGEBOORTEMAANDVADER", "GBAGEBOORTEDAGVADER",
+               "GBAIMPUTATIECODE", "GBAHERKOMSTLAND", "GBAGEBOORTELANDNL")
+
+metadata_p <- data.frame(vars_p)
+
+#From page 10: Format 
+metadata_p$format <- c("A1", "A9", "A4", "A1", "A4", "A4", "A1", "A4", "A1", "A4", "A2",
+                        "A2", "A1", "A1", "A4", "A2", "A2", "A4", "A2", "A2", "A1", "A4", "A1")
+
+# infer type from format and description
+metadata_p$type <- c("character", "character", "factor",
+                     "factor", "factor", "factor",
+                     "numeric", "factor", "numeric",
+                     "numeric", "numeric", "numeric",
+                     "factor", "factor",
+                     "numeric", "numeric", "numeric",
+                     "numeric", "numeric", "numeric",
+                     "factor", "factor", "factor")
+
+# collect info on unknown values
+metadata_p$na <- c(NA, NA,NA,
+                   "-", NA,NA,
+                   "",NA, "-",
+                  "----", "--", "--",
+                  "-", "-", 
+                  "----", "--", "--",
+                  "----", "--", "--",
+                  NA, NA, NA)
+
+### Let's do the same for the households:
+download.file("https://www.cbs.nl/-/media/cbs-op-maat/microdatabestanden/documents/2022/17/gbahuishoudensbus.pdf",
+              "GBAHUISHOUDENTAB_doc.pdf"
+)
+vars_hh <- c("RINPERSOONS", "RINPERSOON", "DATUMAANVANGHH",
+               "DATUMEINDEHH", "HUISHOUDNR", "TYPHH",
+               "PLHH", "REFPERSOONHH", "AANTALPERSHH",
+               "AANTALKINDHH", "AANTALOVHH", "GEBJAARJONGSTEKINDHH",
+               "GEBMAANDJONGSTEKINDHH", "GEBJAAROUDSTEKINDHH","GEBMAANDOUDSTEKINDHH", "IMPUTATIECODEHH")
+metadata_hh <- data.frame(vars_hh)
+metadata_hh$format <- c("A1", "A9", "A8",
+                               "A8", "A12", "A1",
+                               "A2", "A1", "F4",
+                               "F2", "F2", "A4", 
+                               "A2", "A4", "A2", "A1")
+metadata_hh$type <- c("character", "character", "Date",
+                           "Date", "character", "factor",
+                           "factor","factor", "numeric",
+                           "numeric", "numeric", "numeric",
+                           "numeric", "numeric", "numeric", "factor")
+metadata_hh$na <- c(NA, NA,NA,
+                        NA, "","",
+                        "",NA, NA,
+                        NA, NA, NA,
+                        "--", NA, "--", NA)
+
+# Create Fake tables
+n_rows <- 10000
+p_tab <- data.frame(replicate(length(vars_p),sample(0:1,n_rows,rep=TRUE)))
+colnames(p_tab) <- vars_p
+p_tab$RINPERSOON <- sample(0:n_rows,n_rows,rep=F)
+p_tab$GBAGEBOORTEMAAND <- as.factor(sample(1:12,n_rows,rep=T))
+
+hh_tab <- data.frame(replicate(length(vars_hh),sample(0:1,n_rows,rep=TRUE)))
+colnames(hh_tab) <- vars_hh
+hh_tab$RINPERSOON <- p_tab$RINPERSOON
+hh_tab$TYPHH <- as.factor(sample(1:8,n_rows,rep=T))
+
+
+
+###### Function to give the right type and NA from the metadata frames
+# p <- p_tab %>% mutate_at(vars(), paste0("as.", metadata_p$type))  /!\ does not work!!
+# ----> Aleks?
+
+###### Function to join the 2 tables
+join_tabs <- function(p_tab, hh_tab){
+   single_tab <- left_join(p_tab, hh_tab, by=c("RINPERSOON" = "RINPERSOON"))
+   return(single_tab)
+}
+single_tab <- join_tabs(p_tab, hh_tab)
+
+###### Function to summarise the households by types
+summary_hh_typ <- function(single_tab){
+  
+  # from GBAHUISHOUDEN_doc.pdf, page 11
+  levels(single_tab$TYPHH) <- c("Eenpersoonshuishouden",
+                                "Niet-gehuwd paar zonder kinderen",
+                                "Gehuwd paar zonder kinderen",
+                                "Niet-gehuwd paar met kinderen",
+                                "Gehuwd paar met kinderen",
+                                "Eenouderhuishouden",
+                                "Overig huishouden",
+                                "Institutioneel huishouden"
+                            )
+  s <- summary(single_tab$TYPHH)
+  return(s)
+}
+
+summary_hh_typ(single_tab)
+
+
+###### Function to visualise the distribution of birthday months
+viz_birth_month <- function(single_tab){
+  
+  levels(single_tab$GBAGEBOORTEMAAND) <- c(
+    "January","February", "March", "April", 
+    "May", "June", "July", "August",
+    "September", "October", "November", "December"
+    )
+  
+  q <- ggplot(data=single_tab, aes(x=GBAGEBOORTEMAAND)) + 
+    geom_bar(fill="orange") + 
+    ggtitle("Distribution of birthdays by month in register population") +
+    coord_flip() + 
+    scale_x_discrete(limits = rev(levels(single_tab$GBAGEBOORTEMAAND))) +
+    theme_minimal()
+  return(q)
+}
+
+viz_birth_month(single_tab)
