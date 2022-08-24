@@ -107,6 +107,11 @@ p_tab$GBAAANTALOUDERSBUITENLAND <- sample(c('0','1',''),n_rows,rep=TRUE)
 p_tab$GBAGENERATIE      <- sample(c('0','1','-'),n_rows,rep=TRUE)
 
 
+hh_tab <- data.frame(replicate(length(vars_hh),sample(0:1,n_rows,rep=TRUE)))
+colnames(hh_tab) <- vars_hh
+hh_tab$RINPERSOON <- p_tab$RINPERSOON
+hh_tab$TYPHH <- as.factor(sample(c(as.character(1:8),''),n_rows,rep=T))
+
 
 # Replacing NAs -----------------------------------------------------------
 
@@ -126,15 +131,21 @@ p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char
 
 # Method 2
 p_tab <- map2_dfr(p_tab,metadata_pd$na, char_to_na )
+hh_tab <- map2_dfr(hh_tab,metadata_hh$na, char_to_na )
 
 
 
 # Adapting the data type  -------------------------------------------------
 
-funs <- paste0("as.", metadata_p$type)
+funs_p <- paste0("as.", metadata_p$type)
 
-p_tab <- as.data.frame(mapply(function(a,b) b(a), p_tab, lapply(funs, get), SIMPLIFY = F))
+p_tab <- as.data.frame(mapply(function(a,b) b(a), p_tab, lapply(funs_p, get), SIMPLIFY = F))
 str(p_tab)
+
+funs_hh <- paste0("as.", metadata_hh$type)
+
+hh_tab <- as.data.frame(mapply(function(a,b) b(a), hh_tab, lapply(funs_hh, get), SIMPLIFY = F))
+str(hh_tab)
 
 
 ###### Function to join the 2 tables

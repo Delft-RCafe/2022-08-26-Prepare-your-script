@@ -5,12 +5,14 @@ author: "Aleksandra & Clementine"
 date: "`r Sys.Date()`"
 output: 
   revealjs::revealjs_presentation:
-    incremental: true
---- 
+    theme: sky
+    css: ../assets/styles.css
+    logo: ../assets/img/logo.png
+    center: true
+---
 
 ```{r setup, include=FALSE}
 # Load packages -----------------------------------------------------------
-
 # Package names
 packages <- c( "data.table", "here", "tidyverse", "highcharter", "data.table","revealjs","tools")
 
@@ -45,139 +47,323 @@ lfs <- readr::read_csv(here('data' , "dummy_LFS.csv"))
 ```
 
 
-# TIP 1: Create RStudio project: 
+# TIP 1: Prepare your environment 
 
-`File -> New Project -> New Directory -> New Project`
+- Setup RStudio
+- Load packages
+- Use relative paths
 
+## Setup R studio
 
-## & a folder structure
-
-
-![](../assets/img/rstudio_project_files.jpeg)
-
+  - Create a project: `File->New Project->New Directory->New Project`  
+  - Create folder structure
+  - Create first script: `File->New File->RScript->Save in scripts folder` 
+![](../assets/img/rstudio_project_files.jpeg){height=300px}
 
 <font size="3">*Source*: [Data Carpentry: R for Social Scientists](https://datacarpentry.org/r-socialsci/00-intro/index.html#getting-set-up)</font>
+  
+## Load packages 
 
+In your script, include packages that you will be using:
 
-# TIP 2:  Don't use absolute paths 
-![](../assets/img/cracked_setwd.png){height=500px}
+```{r load-pkg, eval=F}
+# Load packages -----------------------------------------------
+ library("data.table")
+ library("here")
+ library("tidyverse")
+ library("tools")
+```
+```{r load-pkg2 , eval=F}
+# Load packages -----------------------------------------------
+# Package names
+packages <- c( "data.table", "here", "tidyverse",
+               "highcharter", "data.table",
+               "revealjs","tools")
 
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
 
-<font size="3"> *Credit*:[Allison horst](https://github.com/allisonhorst)</font>
-
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+```
 
 ## Choose relative paths!
-![](../assets/img/here.png){height=500px}
 
-
-<font size="3">*Credit*:[Allison horst](https://github.com/allisonhorst)</font>
-
-## Choose relative paths!
-
-Here Provides absolute path given current working directory
+Do not set absolute paths with `set_wd()`. `here()`package absolute path given current working directory.
 
 ```{r here-pkg}
-
 here()
 here('data')
 here('data', 'dummy_LFS.csv')
+```
+
+# TIP 2: Generalise your code 
+- Create functions
+- Avoid hard-coding, assign values to objects 
+- Avoid repetition, use e.g. `for` loops, or `apply` family functions
+
+## Functions
+
+```{r function-syntax}
+
+my_function <- function(arg1, arg2, arg3=0) {
+    x <- arg1 + arg2
+    x
+}
+
+my_function(1,2)
 
 ```
 
+## Functions
+You can customise your function for your purpose or further generalise it further:
+```{r function-example1, eval=F }
+###### Function to join the 2 tables
+join_tabs <- function(p_tab, hh_tab){
+   single_tab <- left_join(p_tab, hh_tab, 
+                           by=c("RINPERSOON" = "RINPERSOON"))
+   
+   return(single_tab)
+}
+
+single_tab <- join_tabs(p_tab, hh_tab)
+
+```
+```{r function-example3, eval = F}
+###### Function to join the 2 tables
+join_tabs <- function(p_tab, hh_tab, key = "RINPERSOON"){
+   single_tab <- left_join(p_tab, hh_tab, by=c(key = key))
+   return(single_tab)
+}
+
+single_tab <- join_tabs(p_tab, hh_tab)
+
+```
+
+## Create objects!
+This will help you changing your code only in one place, rather than everywhere you used the value.
+```{r object}
+text1<-paste('Today, I have run 10.2 km. 10.2 km is 12000 m. It was a good result.')
+print(text1)
+
+today<-Sys.Date()
+distance <- 10.2 
+text2<- paste0('On ', today,', I have run ', distance ,'km. '
+              , distance , 'km is ', distance*1000,'m. It was a '
+              , ifelse(distance>=10, 'good','bad'),' result.')
+
+print(text2)
+```
+
+## Avoid repetition
+```{r file-list}
+# Get file names of all our files
+data_path = here('data')
+files = here(data_path, dir(data_path))
+```
+
+```{r manual}
+# Read in first rows of each data.frame
+data1 <- fread(files[1])
+data2 <- fread(files[2])
+```
+
+```{r for-loop, eval=F}
+# Read first rows of each data.frame
+file_list = list()
+
+for (i in files) { 
+  file_list[[i]] == fread(i)
+}
+```
+
+```{r lapply}
+# Read first rows of each data.frame
+file_list2 = lapply(files, fread )
+```
+
+# TIP 3: Read(write) data documentation  
+In some case (like with CBS data), although you cannot access the data, you can already access the documentation. 
+
+If you are collecting data, it's a good moment to create your data model and start writing documentation 
+
+## E.g.: [CBS](https://www.cbs.nl/-/media/cbs-op-maat/microdatabestanden/documents/2022/17/inpatab.pdf)
 
 
-# TIP 3: Read the data documentation  
-E.g.: [CBS](https://www.cbs.nl/-/media/cbs-op-maat/microdatabestanden/documents/2022/17/inpatab.pdf)
+![](../assets/img/documentation2.PNG){height=600px}
 
-
-![](../assets/img/documentation2.PNG){height=300px}
-
-## TIP 3: Read the data documentation 
-E.g.: [EULFS](https://ec.europa.eu/eurostat/documents/1978984/6037342/EULFS-Database-UserGuide.pdf)
+## E.g.: [EULFS](https://ec.europa.eu/eurostat/documents/1978984/6037342/EULFS-Database-UserGuide.pdf)
 
 
 ![](../assets/img/documentation.PNG) 
 
-## ... and make use of it
-- Create a metadata data frame with info about the variables you are going to use
-- It can include fields: 
-  - Names of variables
-  - Variable labels
-  - Variable preferred data type (factor/numeric/date/(...))
-  - Variable data type in the dataset
-  - Coding of missing values 
-  - (...)
-  
-## ... and make use of it
+## Create metadata object
+Create a metadata data frame with info about the variables you are going to use.
+It can include fields: 
 
-```{r metadata-tibble, echo = T}
+- Names of variables
+- Variable labels
+- Variable preferred data type (factor/numeric/date/(...))
+- Variable data type in the dataset
+- Coding of missing values 
+- (...)
 
-meta_tibble = tibble::tibble(
-  var_name = c('NIGHTWK', 'SATWK', 'SUNWK', 'HWUSUAL'),
-  var_label = c('Night work', 'Saturday work', 'Sunday work', 'Hours worked'),
-  pref_dtype = c('factor', 'factor', 'factor', 'numeric'),
-  dset_dtype = c('numeric', 'numeric', 'numeric', 'numeric'),
-  missing = list(c('9',''), c('9',''), c('9',''), c('00','99',''))
-  )
-
-print(meta_tibble)
-
-```
-
-
-## ... and make use of it
-
-```{r metadata-table, echo = T}
-
+## Create metadata object
+```{r metadata-table}
 meta_table = data.table::data.table(
   var_name = c('NIGHTWK', 'SATWK', 'SUNWK', 'HWUSUAL'),
-  var_label = c('Night work', 'Saturday work', 'Sunday work', 'Hours worked'),
+  var_label = c('Night work', 'Saturday work',
+                'Sunday work', 'Hours worked'),
   pref_dtype = c('factor', 'factor', 'factor', 'numeric'),
   dset_dtype = c('numeric', 'numeric', 'numeric', 'numeric'),
   missing = list(c('9',''), c('9',''), c('9',''), c('00','99',''))
   )
-
 print(meta_table)
 
 ```
 
-# TIP 4: Read metadata to an object
+## And use it to automate cleaning
+```{r automate, eval=F}
+# Remove NAs different on variable-specific codes
+## Convert a certain character to NA
+recode_to_na <- function(x, char){
+  out_x <- x
+  out_x[which(out_x %in% char)] = NA
+  return(out_x)
+}
 
-```{r read-data }
-# 1) Prepare for a single file
+## Read in file from the list
+my_data <- file_list2[[1]]
+dim(my_data)
 
-my_data <- read_csv(here('data','dummy_LFS.csv'))
+# Check if all the columns are there
+check_data_cols <- function(real_data, meta_vars){
+  real_names <- names(real_data)
+  n_real_names <- length(real_names)
+  n_meta_names <- length(meta_vars)
+  n_real_meta <- sum(real_names %in% meta_vars)
+  n_meta_real <- sum(meta_vars  %in% real_names)
+  
+  
+  text1 <- paste0(n_real_names - n_real_meta , ' variables not covered in the metadata list:')
+  text2 <- paste0(n_meta_real, ' out of ', length(meta_vars) , ' metadata covered' )
+  
+  print(text1)
+  print(real_names[!(real_names %in% meta_vars)])
+  
+  print(text2)
+  }
+
+check_data_cols(my_data, meta_table$var_name )
+
+meta_var <- meta_table$var_name
+my_data<-my_data[,..meta_var]
 
 
-# 2) Get all the files from data directory
-data_path = here('data')
-files = here(data_path, dir(data_path))
-files_no_ext = tools::file_path_sans_ext(files)
-
-# 2A) Custom for certain file paths (e.g. csv)
-file_list_1 = lapply(files, read_csv)
-
-# 2B) Generalize (data.table output)
-file_list_2 = lapply(files, fread)
-
-head(file_list_2)
-
+# Keep only the vars that we chose in the metadata file
+my_data_clean<-map2_dfr(my_data,meta_table$missing, recode_to_na )
 
 ```
 
 
+# TIP 4: Prepare to read data 
 
+## Prepare for a single file
+```{r read-data1 }
+my_data <- read_csv(here('data','dummy_LFS.csv'))
+```
 
+## Get all the files from data directory
+```{r read-data2 }
+data_path = here('data')
+files = here(data_path, dir(data_path))
+files_no_ext = tools::file_path_sans_ext(files)
+```
 
-# Create functions 
+Custom for certain file paths (e.g. csv)
+```{r read-data3 }
+file_list_1 = lapply(files, read_csv)
+```
 
-to apply on entire dataset or data parts
+Generalize (data.table output)
+```{r read-data4 }
+file_list_2 = lapply(files, fread)
 
-# Make use of lapply/apply 
+# Get the first dataset 
+data1 <- file_list_2[[1]]
+nrows_1 <- nrow(data1)
+```
+
+```{r head-data}
+head(data1)
+```
+
 
 # Prepare for data vises
+- Choose (and adapt) your [theme](https://r-charts.com/ggplot2/themes/)
+- Choose or create your color palette
+- Create your custom functions
 
+## Choose and adapt your theme 
+```{r choose-theme}
+dcc_theme <- theme_minimal() + 
+  theme(panel.grid.major.x = element_blank(),
+        axis.title = element_blank(),
+        text = element_text(color = 'white'),
+        axis.text = element_text(color = 'gray20')
+        )
+
+theme_set(dcc_theme)
+
+```
+
+## Choose or create your color palette
+    - You use pre-made palettes, e.g. from the `viridis()` package(colorblind friendly!)
+    - Or save your own selection of colors in a vector
+    - You can inspect the color palette you chose or created with`scales::show_col()`
+```{r own-colors}
+tud_cols <- c('#00A6D6','#FFFFFF', '#000000' )
+
+scales::show_col(tud_cols)
+scales::show_col(viridis::viridis(9))
+```
+    
+## Create your custom functions 
+```{r custom-function}
+###### Function to visualise the distribution of birthday months
+viz_birth_month <- function(single_tab){
+  
+  levels(single_tab$GBAGEBOORTEMAAND) <- c(
+    "January","February", "March", "April", 
+    "May", "June", "July", "August",
+    "September", "October", "November", "December"
+    )
+  
+  q <- ggplot(data=single_tab, aes(x=GBAGEBOORTEMAAND)) + 
+    geom_bar(fill="orange") + 
+    ggtitle("Distribution of birthdays by month in register population") +
+    coord_flip() + 
+    scale_x_discrete(limits = rev(levels(single_tab$GBAGEBOORTEMAAND))) +
+    theme_minimal()
+  return(q)
+}
+```
+
+
+    
 # When you get the data ...
+ - See the data structure with: `summary()` or `str()`
+ - See if the the data you need is there (confront with metadata file?)
+ - Do initial data cleaning, e.g.:
+   - Recode NAs
+   - Remove white spaces
+   - Recode 
+   - Check and adapt data types
+   
+ 
 
 # Example : CBS data 
 
