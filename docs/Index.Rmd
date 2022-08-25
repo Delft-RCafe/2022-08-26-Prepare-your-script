@@ -32,7 +32,7 @@ source(here('scripts', 'tips.R'))
 # Knitting options ----------------------------------------------
 options(htmltools.dir.version = FALSE)
 knitr::opts_chunk$set(
-  fig.width=9, fig.height=5, fig.retina=3,
+  fig.width=5, fig.height=3, fig.retina=3,
   out.width = "100%",
   cache = FALSE,
   echo = TRUE,
@@ -103,7 +103,10 @@ here('data', 'dummy_LFS.csv')
 # TIP 2: Generalise your code 
 - Create functions
 - Avoid hard-coding, assign values to objects 
-- Avoid repetition, use e.g. `for` loops, or `apply` family functions
+- Avoid repetition, use e.g.:
+  - `for` loops
+  - `apply` family functions
+  - `map()` and `map2()` family functions()
 
 ## Functions
 
@@ -209,6 +212,7 @@ It can include fields:
 - Variable preferred data type (factor/numeric/date/(...))
 - Variable data type in the dataset
 - Coding of missing values 
+- Possible values
 - (...)
 
 ## Create metadata object
@@ -219,57 +223,17 @@ meta_table = data.table::data.table(
                 'Sunday work', 'Hours worked'),
   pref_dtype = c('factor', 'factor', 'factor', 'numeric'),
   dset_dtype = c('numeric', 'numeric', 'numeric', 'numeric'),
-  missing = list(c('9',''), c('9',''), c('9',''), c('00','99',''))
+  missing = list(c('9',''), c('9',''), c('9',''), c('00','99','')),
+  possible_values =list(1:3, 1:3, 1:3, 1:98) 
   )
+
 print(meta_table)
 
 ```
 
-## And use it to automate cleaning
-```{r automate, eval=F}
-# Remove NAs different on variable-specific codes
-## Convert a certain character to NA
-recode_to_na <- function(x, char){
-  out_x <- x
-  out_x[which(out_x %in% char)] = NA
-  return(out_x)
-}
-
-## Read in file from the list
-my_data <- file_list2[[1]]
-dim(my_data)
-
-# Check if all the columns are there
-check_data_cols <- function(real_data, meta_vars){
-  real_names <- names(real_data)
-  n_real_names <- length(real_names)
-  n_meta_names <- length(meta_vars)
-  n_real_meta <- sum(real_names %in% meta_vars)
-  n_meta_real <- sum(meta_vars  %in% real_names)
-  
-  
-  text1 <- paste0(n_real_names - n_real_meta , ' variables not covered in the metadata list:')
-  text2 <- paste0(n_meta_real, ' out of ', length(meta_vars) , ' metadata covered' )
-  
-  print(text1)
-  print(real_names[!(real_names %in% meta_vars)])
-  
-  print(text2)
-  }
-
-check_data_cols(my_data, meta_table$var_name )
-
-meta_var <- meta_table$var_name
-my_data<-my_data[,..meta_var]
-
-
-# Keep only the vars that we chose in the metadata file
-my_data_clean<-map2_dfr(my_data,meta_table$missing, recode_to_na )
-
-```
-
-
 # TIP 4: Prepare to read data 
+- Prepare script to read the data
+- Create dummy data 
 
 ## Prepare for a single file
 ```{r read-data1 }
@@ -301,8 +265,111 @@ nrows_1 <- nrow(data1)
 head(data1)
 ```
 
+## Prepare a dummy dataset
+- Manually
 
-# Prepare for data vises
+```{r dummy-data}
+# Number of rows to generate
+n_rows <- 10000
+
+# Set seed to always get the same result in PRNGs  
+set.seed(12345)
+
+# Generate the data frame
+dummy_data <- data.frame(
+  ID = 1:n_rows,
+  NIGHTWK = sample(as.numeric(c(1,2,3,9,'')),n_rows,rep=T),
+  SATWK = sample(as.numeric(c(1,2,3,9,'')),n_rows,rep=T),
+  SUNWK = sample(as.numeric(c(1,2,3,9,'')),n_rows,rep=T),
+  HWUSUAL = sample(as.numeric(c(0:99,'')),n_rows,rep=T)
+  )
+
+```
+
+## Prepare a dummy dataset
+- From a metadata file
+```{r dummy-data2}
+# Create variable with all possible values of a variable
+meta_table$all_values <- mapply(c, meta_table$missing, meta_table$possible_values, SIMPLIFY = FALSE)
+
+# Character vector of function names to adapt the data type
+funs <- paste0("as.", meta_table$dset_dtype)
+
+# Change the data type so that it's aligned with the documentation
+meta_table[,all_values:= mapply(function(arg,f) f(arg),
+                   meta_table$all_values, 
+                   lapply(funs, get),
+                   SIMPLIFY = F)]
+
+# Number of rows to generate
+n_rows <- 10000
+
+# Set seed to always get the same result in PRNGs  
+set.seed(12345)
+
+# Sample 10,000 data points from all possible values
+dummy_data2 <- lapply(meta_table$all_values, 
+                      sample, n_rows, rep=T) %>% as.data.table()
+
+colnames(dummy_data2) <- meta_table$var_name
+
+# Adding ID variable
+dummy_data2[, ID:= 1:n_rows]
+
+setcolorder(dummy_data2, c('ID', meta_table$var_name))
+
+```
+
+
+## And use it to automate cleaning
+```{r automate, eval=F}
+# Remove NAs different on variable-specific codes
+## Convert a certain character to NA
+recode_to_na <- function(x, char){
+  out_x <- x
+  out_x[which(out_x %in% char)] = NA
+  return(out_x)
+}
+
+# Check if all the columns are there
+check_data_cols <- function(real_data, meta_vars){
+  real_names <- names(real_data)
+  n_real_names <- length(real_names)
+  n_meta_names <- length(meta_vars)
+  n_real_meta <- sum(real_names %in% meta_vars)
+  n_meta_real <- sum(meta_vars  %in% real_names)
+  
+  text1 <- paste0(n_real_names - n_real_meta , ' variables not covered in the metadata list:')
+  text2 <- paste0(n_meta_real, ' out of ', length(meta_vars) , ' metadata covered' )
+  
+  paste(text1,
+  paste(real_names[!(real_names %in% meta_vars)], sep=', '),
+  ';',
+  text2
+  )
+  }
+check_data_cols(dummy_data2, meta_table$var_name )
+
+meta_var <- meta_table$var_name
+
+dummy_data_clean <- dummy_data2[,..meta_var]
+
+
+# Keep only the vars that we chose in the metadata file
+dummy_data_clean<-map2_dfr(dummy_data_clean,meta_table$missing, recode_to_na )
+
+
+# Character vector of function names to adapt the data type
+funs <- paste0("as.", meta_table$pref_dtype)
+
+dummy_data_clean <- as.data.table(mapply(function(a,b) b(a), dummy_data_clean, lapply(funs, get), SIMPLIFY = F))
+
+str(dummy_data_clean)
+
+
+```
+
+# TIP 5: Prepare for data vises
 - Choose (and adapt) your [theme](https://r-charts.com/ggplot2/themes/)
 - Choose or create your color palette
 - Create your custom functions
@@ -321,17 +388,40 @@ theme_set(dcc_theme)
 ```
 
 ## Choose or create your color palette
-  - You use pre-made palettes, e.g. from the `viridis()` package(colorblind friendly!)
-  - Or save your own selection of colors in a vector
-  - You can inspect the color palette you chose or created with`scales::show_col()`
-  
+- Use pre-made palettes, e.g. from `viridis()`
+- Or save your own selection of colors in a vector
+- Inspect color palettes with `scales::show_col()`
+- Change ggplot default colors with `options()`
+ 
+## Choose or create your color palette 
+- Use pre-made palettes, e.g. from `viridis()`
+- Or save your own selection of colors in a vector
 ```{r own-colors}
-tud_cols <- c('#00A6D6','#FFFFFF', '#000000' )
+tud_cols  <- c('#00A6D6','#FFFFFF', '#000000', '#0C2340', '#00B8C8'  )
+cols_cont <- viridis::viridis(9)
+tud_qual  <- c('#00B8C8', '#EC6842', '#FFB81C', '#EF60A3' )
 
-scales::show_col(tud_cols)
-scales::show_col(viridis::viridis(9))
 ```
-    
+
+## Choose or create your color palette
+- Inspect color palettes with `scales::show_col()`
+```{r own-colors2 ,out.width = "40%"}
+scales::show_col( tud_cols  ); scales::show_col( cols_cont  )
+```
+
+## Choose or create your color palette
+- Change ggplot default colors with `options()`
+```{r own-colors3}
+opts <- options()  # save old options
+
+options(ggplot2.continuous.colour=cols_cont)
+options(ggplot2.continuous.fill = cols_cont)
+
+options(ggplot2.discrete.colour=tud_qual)
+options(ggplot2.discrete.fill = tud_qual)
+
+```
+  
 ## Create your custom functions 
 ```{r custom-function}
 ###### Function to visualise the distribution of birthday months
@@ -355,17 +445,22 @@ viz_birth_month <- function(single_tab){
 
 
     
-# When you get the data ...
- - See the data structure with: `summary()` or `str()`
- - See if the the data you need is there (confront with metadata file?)
- - Do initial data cleaning, e.g.:
-   - Recode NAs
-   - Remove white spaces
-   - Recode 
-   - Check and adapt data types
+# TIP 6: When you get the data ...
+- Store the data in the right location (e.g. `data/` folder)
+- See the data structure with: `summary()` or `str()`
+- See if the the data you need is there (confront with metadata file?)
+- Do initial data cleaning, e.g.:
+  - Recode NAs
+  - Remove white spaces
+  - Recode 
+  - Check and adapt data types
+  - Make sure dates are read in the right format (try `lubridate()`)
    
- 
-
 # Example : CBS data 
+Let's do some coding
 
 # Discussion
+Questions? 
+Comments? 
+Your own examples?
+

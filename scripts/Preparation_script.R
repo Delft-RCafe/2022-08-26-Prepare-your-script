@@ -98,19 +98,19 @@ hh_tab$TYPHH <- as.factor(sample(1:8,n_rows,rep=T))
 
 # Recreating  the simulating data, so that they include missing values: 
 n_rows <- 10000
-p_tab <- data.frame(replicate(length(vars_p),sample(0:1,n_rows,rep=TRUE)))
-colnames(p_tab) <- vars_p
-p_tab$RINPERSOON <- sample(0:n_rows,n_rows,rep=F)
-p_tab$GBAGEBOORTEMAAND <- as.factor(sample(1:12,n_rows,rep=T))
-p_tab$GBAGESLACHT <- sample(c('0','1','-'),n_rows,rep=TRUE)
-p_tab$GBAAANTALOUDERSBUITENLAND <- sample(c('0','1',''),n_rows,rep=TRUE)
-p_tab$GBAGENERATIE      <- sample(c('0','1','-'),n_rows,rep=TRUE)
+p_tab2 <- data.frame(replicate(length(vars_p),sample(0:1,n_rows,rep=TRUE)))
+colnames(p_tab2) <- vars_p
+p_tab2$RINPERSOON <- sample(0:n_rows,n_rows,rep=F)
+p_tab2$GBAGEBOORTEMAAND <- as.factor(sample(1:12,n_rows,rep=T))
+p_tab2$GBAGESLACHT <- sample(c('0','1','-'),n_rows,rep=TRUE)
+p_tab2$GBAAANTALOUDERSBUITENLAND <- sample(c('0','1',''),n_rows,rep=TRUE)
+p_tab2$GBAGENERATIE      <- sample(c('0','1','-'),n_rows,rep=TRUE)
 
 
-hh_tab <- data.frame(replicate(length(vars_hh),sample(0:1,n_rows,rep=TRUE)))
-colnames(hh_tab) <- vars_hh
-hh_tab$RINPERSOON <- p_tab$RINPERSOON
-hh_tab$TYPHH <- as.factor(sample(c(as.character(1:8),''),n_rows,rep=T))
+hh_tab2 <- data.frame(replicate(length(vars_hh),sample(0:1,n_rows,rep=TRUE)))
+colnames(hh_tab2) <- vars_hh
+hh_tab2$RINPERSOON <- p_tab2$RINPERSOON
+hh_tab2$TYPHH <- as.factor(sample(c(as.character(1:8),''),n_rows,rep=T))
 
 
 # Replacing NAs -----------------------------------------------------------
@@ -123,15 +123,15 @@ char_to_na <- function(x, char){
 }
 
 # Data table way
-p_dtab <- as.data.table(p_tab)
+p_dtab <- as.data.table(p_tab2)
 metadata_pd <- as.data.table(metadata_p) 
 
 # Method 1 
 p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char)}, .SD, metadata_pd$na,  SIMPLIFY=F ), .SDcols = metadata_pd$vars_p ]
 
 # Method 2
-p_tab <- map2_dfr(p_tab,metadata_pd$na, char_to_na )
-hh_tab <- map2_dfr(hh_tab,metadata_hh$na, char_to_na )
+p_tab2 <- map2_dfr(p_tab2,metadata_pd$na, char_to_na )
+hh_tab2 <- map2_dfr(hh_tab2,metadata_hh$na, char_to_na )
 
 
 
@@ -139,13 +139,13 @@ hh_tab <- map2_dfr(hh_tab,metadata_hh$na, char_to_na )
 
 funs_p <- paste0("as.", metadata_p$type)
 
-p_tab <- as.data.frame(mapply(function(a,b) b(a), p_tab, lapply(funs_p, get), SIMPLIFY = F))
-str(p_tab)
+p_tab2 <- as.data.frame(mapply(function(a,b) b(a), p_tab2, lapply(funs_p, get), SIMPLIFY = F))
+str(p_tab2)
 
 funs_hh <- paste0("as.", metadata_hh$type)
 
-hh_tab <- as.data.frame(mapply(function(a,b) b(a), hh_tab, lapply(funs_hh, get), SIMPLIFY = F))
-str(hh_tab)
+# hh_tab2 <- as.data.frame(mapply(function(a,b) b(a), hh_tab, lapply(funs_hh, get), SIMPLIFY = F))
+# str(hh_tab)
 
 
 ###### Function to join the 2 tables
