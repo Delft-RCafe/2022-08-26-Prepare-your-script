@@ -9,6 +9,8 @@ output:
     css: ../assets/styles.css
     logo: ../assets/img/logo.png
     center: true
+    includes:
+      in_header: header.html
 ---
 
 ```{r setup, include=FALSE}
@@ -46,6 +48,23 @@ knitr::opts_chunk$set(
 lfs <- readr::read_csv(here('data' , "dummy_LFS.csv"))
 ```
 
+```{r htmlTemplate, echo=FALSE, out.width = "40%"}
+# Create the external file
+img <- htmltools::img(src = knitr::image_uri(here("assets", "img", "logo.png")), 
+               alt = 'logo', 
+               style = 'position:absolute; top:10px; right:1%; padding:10px;z-index:200;',
+               width = '150',
+               height = '150'
+               )
+
+htmlhead <- paste0('
+<script>
+document.write(\'<div class="logos">',img,'</div>\')
+</script>
+')
+
+readr::write_lines(htmlhead, path = "header.html")
+```
 
 # TIP 1: Prepare your environment 
 
@@ -105,7 +124,7 @@ here('data', 'dummy_LFS.csv')
 - Avoid hard-coding, assign values to objects 
 - Avoid repetition, use e.g.:
   - `for` loops
-  - `apply` family functions
+  - `apply()` family functions
   - `map()` and `map2()` family functions()
 
 ## Functions
@@ -463,4 +482,10 @@ Let's do some coding
 Questions? 
 Comments? 
 Your own examples?
+
+
+
+# Next R Cafe 
+![](../assets/img/R_cafe_Sep22.png)
+
 
