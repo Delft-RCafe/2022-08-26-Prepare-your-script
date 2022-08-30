@@ -16,7 +16,7 @@ output:
 ```{r setup, include=FALSE}
 # Load packages -----------------------------------------------------------
 # Package names
-packages <- c( "data.table", "here", "tidyverse", "highcharter", "data.table","revealjs","tools")
+packages <- c( "data.table", "here", "tidyverse", "highcharter", "data.table","revealjs","tools", "patchwork")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -82,9 +82,6 @@ readr::write_lines(htmlhead, path = "header.html")
 <font size="3">*Source*: [Data Carpentry: R for Social Scientists](https://datacarpentry.org/r-socialsci/00-intro/index.html#getting-set-up)</font>
   
 ## Load packages 
-
-In your script, include packages that you will be using:
-
 ```{r load-pkg, eval=F}
 # Load packages -----------------------------------------------
  library("data.table")
@@ -110,7 +107,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 ```
 
 ## Choose relative paths!
-
 Do not set absolute paths with `set_wd()`. `here()`package absolute path given current working directory.
 
 ```{r here-pkg}
@@ -165,6 +161,22 @@ single_tab <- join_tabs(p_tab, hh_tab)
 
 ```
 
+## (l)apply() it
+
+```{r apply, eval = F}
+#### lapply()
+new_list <- lapply(old_list, function)
+
+#### map2()
+new_df <- map2_dfr(object1, object2, function )
+
+#### mapply()
+new_df <- mapply(function,arg1 = object1, arg2= object2,  SIMPLIFY=F ) %>% as.data.frame()
+
+
+```
+
+
 ## Create objects!
 This will help you changing your code only in one place, rather than everywhere you used the value.
 ```{r object}
@@ -186,13 +198,11 @@ print(text2)
 data_path = here('data')
 files = here(data_path, dir(data_path))
 ```
-
 ```{r manual}
 # Read in first rows of each data.frame
 data1 <- fread(files[1])
 data2 <- fread(files[2])
 ```
-
 ```{r for-loop, eval=F}
 # Read first rows of each data.frame
 file_list = list()
@@ -201,7 +211,6 @@ for (i in files) {
   file_list[[i]] == fread(i)
 }
 ```
-
 ```{r lapply}
 # Read first rows of each data.frame
 file_list2 = lapply(files, fread )
@@ -308,25 +317,25 @@ dummy_data <- data.frame(
 ## Prepare a dummy dataset
 - From a metadata file
 ```{r dummy-data2}
-# Create variable with all possible values of a variable
+### Create variable with all possible values of a variable
 meta_table$all_values <- mapply(c, meta_table$missing, meta_table$possible_values, SIMPLIFY = FALSE)
 
-# Character vector of function names to adapt the data type
+### Character vector of function names to adapt the data type
 funs <- paste0("as.", meta_table$dset_dtype)
 
-# Change the data type so that it's aligned with the documentation
+### Change the data type so that it's aligned with the documentation
 meta_table[,all_values:= mapply(function(arg,f) f(arg),
                    meta_table$all_values, 
                    lapply(funs, get),
                    SIMPLIFY = F)]
 
-# Number of rows to generate
+### Number of rows to generate
 n_rows <- 10000
 
-# Set seed to always get the same result in PRNGs  
+### Set seed to always get the same result in PRNGs  
 set.seed(12345)
 
-# Sample 10,000 data points from all possible values
+### Sample 10,000 data points from all possible values
 dummy_data2 <- lapply(meta_table$all_values, 
                       sample, n_rows, rep=T) %>% as.data.table()
 
@@ -340,17 +349,18 @@ setcolorder(dummy_data2, c('ID', meta_table$var_name))
 ```
 
 
-## And use it to automate cleaning
-```{r automate, eval=F}
+## And use it to automate cleaning 
+Remove NA
+```{r automate-na}
 # Remove NAs different on variable-specific codes
-## Convert a certain character to NA
+### Convert a certain character to NA
 recode_to_na <- function(x, char){
   out_x <- x
   out_x[which(out_x %in% char)] = NA
   return(out_x)
 }
 
-# Check if all the columns are there
+### Check if all the columns are there
 check_data_cols <- function(real_data, meta_vars){
   real_names <- names(real_data)
   n_real_names <- length(real_names)
@@ -367,23 +377,48 @@ check_data_cols <- function(real_data, meta_vars){
   text2
   )
   }
-check_data_cols(dummy_data2, meta_table$var_name )
+#check_data_cols(dummy_data2, meta_table$var_name )
 
+### Keep only the variables from the metadata 
 meta_var <- meta_table$var_name
-
 dummy_data_clean <- dummy_data2[,..meta_var]
 
+### see the first 10 rows
+#head(dummy_data_clean,10)
 
-# Keep only the vars that we chose in the metadata file
+
+### Keep only the vars that we chose in the metadata file
 dummy_data_clean<-map2_dfr(dummy_data_clean,meta_table$missing, recode_to_na )
 
+### see the first 10 rows
+#head(dummy_data_clean,10)
+```
 
-# Character vector of function names to adapt the data type
+## And use it to automate cleaning 
+Adapt data types 
+```{r automate-types, eval=F}
+### Vector of function names to change data types 
 funs <- paste0("as.", meta_table$pref_dtype)
 
-dummy_data_clean <- as.data.table(mapply(function(a,b) b(a), dummy_data_clean, lapply(funs, get), SIMPLIFY = F))
+# ## Correct data.table syntax
+# dummy_data_clean <- as.data.table(dummy_data_clean)
+# vars <-meta_table$var_name
+# 
+# dummy_data_clean[ , c(vars) := mapply(function(a,b) b(a),
+#                                       .SD,
+#                                       lapply(funs, get),
+#                                       SIMPLIFY=F ),
+#                   .SDcols = vars ]
 
-str(dummy_data_clean)
+
+### Convert all the columns in the data set to the preferred data type 
+dummy_data_clean <- as.data.table(mapply(function(a,b) b(a), 
+                                         dummy_data_clean, 
+                                         lapply(funs, get), 
+                                         SIMPLIFY = F))
+
+
+#str(dummy_data_clean)
 
 
 ```
@@ -393,18 +428,47 @@ str(dummy_data_clean)
 - Choose or create your color palette
 - Create your custom functions
 
+## Choose and adapt your theme
+Default ggplot
+```{r ggplot-default}
+plot_iris<-function(){
+  p1 <- ggplot(iris, aes(Sepal.Length,Sepal.Width, color = Species))+
+    geom_point()
+  
+  p2 <- ggplot(iris, aes(Sepal.Length,Sepal.Width,  color = Sepal.Width))+
+    geom_point()
+  
+  #Compose plot
+  p3 <- p1|p2
+  
+  return(p3)
+
+}
+
+plot_iris()
+
+```
+
+
 ## Choose and adapt your theme 
 ```{r choose-theme}
 dcc_theme <- theme_minimal() + 
   theme(panel.grid.major.x = element_blank(),
         axis.title = element_blank(),
-        text = element_text(color = 'white'),
-        axis.text = element_text(color = 'gray20')
+        text = element_text(color = 'gray60'),
+        axis.text = element_text(color = 'gray20'),
+        legend.position="bottom"
         )
 
 theme_set(dcc_theme)
 
 ```
+
+## Choose and adapt your theme 
+```{r plot-new-theme}
+plot_iris()
+```
+
 
 ## Choose or create your color palette
 - Use pre-made palettes, e.g. from `viridis()`
@@ -417,7 +481,7 @@ theme_set(dcc_theme)
 - Or save your own selection of colors in a vector
 ```{r own-colors}
 tud_cols  <- c('#00A6D6','#FFFFFF', '#000000', '#0C2340', '#00B8C8'  )
-cols_cont <- viridis::viridis(9)
+cols_cont <- viridis::viridis(20)
 tud_qual  <- c('#00B8C8', '#EC6842', '#FFB81C', '#EF60A3' )
 
 ```
@@ -440,6 +504,12 @@ options(ggplot2.discrete.colour=tud_qual)
 options(ggplot2.discrete.fill = tud_qual)
 
 ```
+
+## Choose or create your color palette 
+```{r plot-new-cols}
+plot_iris()
+```  
+  
   
 ## Create your custom functions 
 ```{r custom-function}

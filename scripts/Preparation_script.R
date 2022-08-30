@@ -127,7 +127,8 @@ p_dtab <- as.data.table(p_tab2)
 metadata_pd <- as.data.table(metadata_p) 
 
 # Method 1 
-p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char)}, .SD, metadata_pd$na,  SIMPLIFY=F ), .SDcols = metadata_pd$vars_p ]
+p_dtab[ , c(metadata_pd$vars_p) := mapply(function(x, char) { char_to_na(x, char)},
+                                          .SD, metadata_pd$na,  SIMPLIFY=F ), .SDcols = metadata_pd$vars_p ]
 
 # Method 2
 p_tab2 <- map2_dfr(p_tab2,metadata_pd$na, char_to_na )
