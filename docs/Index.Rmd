@@ -339,11 +339,13 @@ set.seed(12345)
 dummy_data2 <- lapply(meta_table$all_values, 
                       sample, n_rows, rep=T) %>% as.data.table()
 
+#Name the variables
 colnames(dummy_data2) <- meta_table$var_name
 
-# Adding ID variable
+# Add ID variable
 dummy_data2[, ID:= 1:n_rows]
 
+# Reorder vars
 setcolorder(dummy_data2, c('ID', meta_table$var_name))
 
 ```
@@ -471,13 +473,13 @@ plot_iris()
 
 
 ## Choose or create your color palette
-- Use pre-made palettes, e.g. from `viridis()`
+- Use [pre-made palettes](https://r-graph-gallery.com/ggplot2-color.html#:~:text=CHANGING%20THE%20COLOR%20SCALE%20WITH%20GGPLOT2), e.g. from `viridis()`
 - Or save your own selection of colors in a vector
 - Inspect color palettes with `scales::show_col()`
 - Change ggplot default colors with `options()`
  
 ## Choose or create your color palette 
-- Use pre-made palettes, e.g. from `viridis()`
+- Use [pre-made palettes](https://r-graph-gallery.com/ggplot2-color.html#:~:text=CHANGING%20THE%20COLOR%20SCALE%20WITH%20GGPLOT2), e.g. from `viridis()`
 - Or save your own selection of colors in a vector
 ```{r own-colors}
 tud_cols  <- c('#00A6D6','#FFFFFF', '#000000', '#0C2340', '#00B8C8'  )
@@ -497,8 +499,8 @@ scales::show_col( tud_cols  ); scales::show_col( cols_cont  )
 ```{r own-colors3}
 opts <- options()  # save old options
 
-options(ggplot2.continuous.colour=cols_cont)
-options(ggplot2.continuous.fill = cols_cont)
+options(ggplot2.continuous.colour="viridis")
+options(ggplot2.continuous.fill = "viridis")
 
 options(ggplot2.discrete.colour=tud_qual)
 options(ggplot2.discrete.fill = tud_qual)
