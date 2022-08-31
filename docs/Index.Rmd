@@ -339,22 +339,22 @@ set.seed(12345)
 dummy_data2 <- lapply(meta_table$all_values, 
                       sample, n_rows, rep=T) %>% as.data.table()
 
-#Name the variables
+### Name the variables
 colnames(dummy_data2) <- meta_table$var_name
 
-# Add ID variable
+### Add ID variable
 dummy_data2[, ID:= 1:n_rows]
 
-# Reorder vars
+### Reorder vars
 setcolorder(dummy_data2, c('ID', meta_table$var_name))
 
 ```
 
 
-## And use it to automate cleaning 
-Remove NA
+## And use it to automate cleaning - Recode NA
 ```{r automate-na}
 # Remove NAs different on variable-specific codes
+
 ### Convert a certain character to NA
 recode_to_na <- function(x, char){
   out_x <- x
@@ -362,6 +362,17 @@ recode_to_na <- function(x, char){
   return(out_x)
 }
 
+### Keep only the variables from the metadata 
+meta_var <- meta_table$var_name
+dummy_data_clean <- dummy_data2[,..meta_var]
+
+### Keep only the vars that we chose in the metadata file
+dummy_data_clean<-map2_dfr(dummy_data_clean,meta_table$missing, recode_to_na )
+
+```
+
+
+```{r automate-na2, echo = F}
 ### Check if all the columns are there
 check_data_cols <- function(real_data, meta_vars){
   real_names <- names(real_data)
@@ -380,37 +391,14 @@ check_data_cols <- function(real_data, meta_vars){
   )
   }
 #check_data_cols(dummy_data2, meta_table$var_name )
-
-### Keep only the variables from the metadata 
-meta_var <- meta_table$var_name
-dummy_data_clean <- dummy_data2[,..meta_var]
-
-### see the first 10 rows
-#head(dummy_data_clean,10)
-
-
-### Keep only the vars that we chose in the metadata file
-dummy_data_clean<-map2_dfr(dummy_data_clean,meta_table$missing, recode_to_na )
-
-### see the first 10 rows
-#head(dummy_data_clean,10)
 ```
 
-## And use it to automate cleaning 
-Adapt data types 
-```{r automate-types, eval=F}
+
+
+## And use it to automate cleaning - Adapt data types 
+```{r automate-types}
 ### Vector of function names to change data types 
 funs <- paste0("as.", meta_table$pref_dtype)
-
-# ## Correct data.table syntax
-# dummy_data_clean <- as.data.table(dummy_data_clean)
-# vars <-meta_table$var_name
-# 
-# dummy_data_clean[ , c(vars) := mapply(function(a,b) b(a),
-#                                       .SD,
-#                                       lapply(funs, get),
-#                                       SIMPLIFY=F ),
-#                   .SDcols = vars ]
 
 
 ### Convert all the columns in the data set to the preferred data type 
@@ -422,8 +410,21 @@ dummy_data_clean <- as.data.table(mapply(function(a,b) b(a),
 
 #str(dummy_data_clean)
 
+```
+
+```{r automate-types-dt, echo = F }
+# ## Correct data.table syntax
+# dummy_data_clean <- as.data.table(dummy_data_clean)
+# vars <-meta_table$var_name
+# 
+# dummy_data_clean[ , c(vars) := mapply(function(a,b) b(a),
+#                                       .SD,
+#                                       lapply(funs, get),
+#                                       SIMPLIFY=F ),
+#                   .SDcols = vars ]
 
 ```
+
 
 # TIP 5: Prepare for data vises
 - Choose (and adapt) your [theme](https://r-charts.com/ggplot2/themes/)
@@ -431,24 +432,24 @@ dummy_data_clean <- as.data.table(mapply(function(a,b) b(a),
 - Create your custom functions
 
 ## Choose and adapt your theme
-Default ggplot
-```{r ggplot-default}
+```{r ggplot-fun, echo = F}
 plot_iris<-function(){
+  #Define plots
   p1 <- ggplot(iris, aes(Sepal.Length,Sepal.Width, color = Species))+
     geom_point()
   
-  p2 <- ggplot(iris, aes(Sepal.Length,Sepal.Width,  color = Sepal.Width))+
+  p2 <- ggplot(iris, aes(Sepal.Length,Sepal.Width,  color = Petal.Length))+
     geom_point()
   
   #Compose plot
   p3 <- p1|p2
-  
-  return(p3)
-
+  p3
 }
+```
 
+
+```{r ggplot-default, echo = F}
 plot_iris()
-
 ```
 
 
@@ -457,7 +458,7 @@ plot_iris()
 dcc_theme <- theme_minimal() + 
   theme(panel.grid.major.x = element_blank(),
         axis.title = element_blank(),
-        text = element_text(color = 'gray60'),
+        text = element_text(color = 'gray60', size = rel(3)),
         axis.text = element_text(color = 'gray20'),
         legend.position="bottom"
         )
@@ -483,7 +484,7 @@ plot_iris()
 - Or save your own selection of colors in a vector
 ```{r own-colors}
 tud_cols  <- c('#00A6D6','#FFFFFF', '#000000', '#0C2340', '#00B8C8'  )
-cols_cont <- viridis::viridis(20)
+cols_cont <- viridis::viridis(9)
 tud_qual  <- c('#00B8C8', '#EC6842', '#FFB81C', '#EF60A3' )
 
 ```
