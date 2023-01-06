@@ -1,5 +1,8 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Delft-RCafe/2022-08-26-Prepare-your-script/main?urlpath=rstudio)
+
+
 # R Cafe  August - prepare your script without the data at hand 
 
 ## Intro 
